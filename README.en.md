@@ -59,7 +59,7 @@ The GLM path is primarily recommended for the following advantages:
 ## Prerequisites
 
 - Your Epic account email and password.
-- Epic account 2FA must be disabled (email, SMS, or authenticator app).
+- Disable Epic email/SMS 2FA. Authenticator-app 2FA is supported when `EPIC_TOTP_SECRET` is configured.
 - A GLM account with `GLM_API_KEY` prepared for captcha solving.
 
 ---
@@ -90,6 +90,14 @@ Required in all cases:
 | --- | --- |
 | `EPIC_EMAIL` | your_epic_email@example.com |
 | `EPIC_PASSWORD` | your_epic_password |
+
+If the Epic account uses authenticator-app 2FA, also configure:
+
+| Setting | Example value |
+| --- | --- |
+| `EPIC_TOTP_SECRET` | The Base32 secret encoded in the authenticator QR code |
+
+The workflow generates the current six-digit TOTP on the MFA page. Email codes, SMS codes, and Passkeys are not supported. Do not enter the currently displayed six-digit code as the Secret.
 
 If you use `GLM`, start with this set:
 
@@ -246,9 +254,9 @@ The fix is simple: sign in to Epic once in a normal browser, complete that confi
 
 ### 3. Logs show `two_factor_authentication.required` or the page goes to `/id/login/mfa`
 
-This means Epic two-factor authentication is still enabled on the account. The current project does not support Epic email / SMS / authenticator-based 2FA, so you need to disable it in the Epic account settings before rerunning the workflow.
+This means the Epic account entered its two-factor authentication flow. For authenticator-app 2FA, add `EPIC_TOTP_SECRET` to GitHub Secrets and the workflow will generate and submit the current six-digit TOTP. Email codes, SMS codes, and Passkeys are not supported.
 
-If you see signals like these, treat them as “Epic 2FA is still enabled”:
+If you see signals like these, treat them as “Epic requires 2FA verification”:
 
 - `errors.com.epicgames.common.two_factor_authentication.required`
 - `Two-Factor authentication required to process request`
@@ -258,8 +266,8 @@ How to fix it:
 
 1. Sign in to the Epic account in a normal browser
 2. Open the account security settings page
-3. Click `Remove` for every enabled verification method
-4. Make sure email, SMS, authenticator, and any other Epic 2FA methods are all disabled
+3. For authenticator-app 2FA, add the QR code's Base32 secret to GitHub Secrets as `EPIC_TOTP_SECRET`
+4. If you do not want automatic authenticator codes, click `Remove` for the enabled verification method
 5. Rerun the workflow
 
 Reference page:

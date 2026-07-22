@@ -39,8 +39,16 @@
 
 | Secret | 说明 |
 | --- | --- |
-| `EPIC_EMAIL` | Epic 邮箱，需关闭 2FA |
-| `EPIC_PASSWORD` | Epic 密码，需关闭 2FA |
+| `EPIC_EMAIL` | Epic 邮箱，需关闭邮箱 / 短信 2FA |
+| `EPIC_PASSWORD` | Epic 密码，需关闭邮箱 / 短信 2FA |
+
+如果账号启用了验证器 App 2FA，可额外配置：
+
+| Secret | 说明 |
+| --- | --- |
+| `EPIC_TOTP_SECRET` | 验证器二维码对应的 Base32 密钥；不要填写当前显示的 6 位动态验证码 |
+
+未配置时保持现有登录行为。邮箱验证码、短信验证码和 Passkey 暂不支持。
 
 如果你使用 Gemini 官方接口：
 

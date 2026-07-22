@@ -937,3 +937,27 @@
   - Fork 运行 `29563199230` 使用相同编号模板和中点规则完成登录及两款游戏领取，运行 `29563952219` 再次完成登录并从订单历史确认两款均已领取。
   - 基于最新上游的 Fork 运行 `29622500920` 完成登录、商店会话验证和订单历史核对；该轮没有下发编号线段题，因此只作为集成无回归证据，不替代上述题图回放。
   - 按仓库规则未执行测试；使用 Black、Ruff、`py_compile`、真实挑战图离线回放和 `git diff --check` 验证。
+
+### 2026-07-22 验证器 2FA 账号无法自动完成登录
+
+- 现象：
+  - 当前登录流程遇到 Epic 验证器 MFA 页面时直接终止，使用验证器 App 2FA 的账号必须先关闭该安全设置才能运行。
+- 根因判断：
+  - 登录状态机只识别二步验证错误，没有生成、填写和重新提交 TOTP 的处理路径，也没有对应的 Secret 注入配置。
+- 改动文件：
+  - `.github/workflows/epic-gamer.yml`
+  - `.github/workflows/README.md`
+  - `.github/workflows/README.en.md`
+  - `README.md`
+  - `README.en.md`
+  - `app/services/epic_authorization_service.py`
+  - `app/services/epic_totp_service.py`
+  - `pyproject.toml`
+  - `uv.lock`
+  - `docs/maintenance-log.md`
+- 处理结果：
+  - 新增可选的 `EPIC_TOTP_SECRET`，使用 Base32 密钥生成 6 位 TOTP，并支持单输入框和分离式输入框。
+  - 验证码临近过期时等待新时间窗口；Epic 返回无效或过期时重新生成，hCaptcha 打断后如仍需 MFA 则重新提交。
+  - TOTP 总提交次数限制为 6 次，无效或过期拒绝次数限制为 3 次；未配置密钥时保持原有行为。
+  - 密钥不写入日志，验证码输入框在填写前进行视觉遮罩，并在失败截图前清空，避免完整验证码进入日志、截图或录屏；邮箱验证码、短信验证码和 Passkey 不在本次范围。
+  - 按仓库规则未执行测试；使用 Black、Ruff、`py_compile`、workflow YAML 解析、依赖锁核对和 `git diff --check` 进行静态验证。

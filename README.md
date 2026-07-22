@@ -59,7 +59,7 @@
 ## 环境与前提要求
 
 - Epic 账号邮箱与密码（用于登录）。
-- 关闭 Epic 账号 2FA（邮箱/短信/验证器）。
+- 关闭 Epic 账号邮箱 / 短信 2FA；如使用验证器 App 2FA，请配置 `EPIC_TOTP_SECRET`。
 - 注册 GLM 并准备 `GLM_API_KEY`（用于验证码识别）。
 
 ---
@@ -90,6 +90,14 @@ Fork 之后先打开自己仓库的 `Actions` 页面，进入 `Epic Awesome Game
 | --- | --- |
 | `EPIC_EMAIL` | your_epic_email@example.com |
 | `EPIC_PASSWORD` | your_epic_password |
+
+如果 Epic 账号启用了验证器 App 2FA，请额外配置：
+
+| 配置名 | 示例值 |
+| --- | --- |
+| `EPIC_TOTP_SECRET` | 验证器二维码对应的 Base32 密钥 |
+
+工作流会在 MFA 页面自动生成 6 位 TOTP。邮箱验证码、短信验证码和 Passkey 暂不支持；不要填写当前显示的 6 位动态验证码。
 
 如果你使用 `GLM`，建议先按下面这组填写：
 
@@ -258,9 +266,9 @@ All week-free games are already in the library
 
 ### 3. 日志里出现 `two_factor_authentication.required` 或页面跳到 `/id/login/mfa`
 
-这说明 Epic 账号的二步验证还没有关闭。当前项目不支持处理 Epic 的邮箱 / 短信 / 验证器二步验证，所以这类情况需要先在 Epic 账号设置里手动关闭，再重新运行。
+这说明 Epic 账号进入了二步验证流程。如果使用验证器 App 2FA，可以在 GitHub Secrets 中配置 `EPIC_TOTP_SECRET`，工作流会自动生成并提交 6 位 TOTP。邮箱验证码、短信验证码和 Passkey 暂不支持。
 
-如果你看到下面这些信号，通常都可以按“2FA 没关”处理：
+如果你看到下面这些信号，通常都可以按“账号需要 2FA 验证”处理：
 
 - `errors.com.epicgames.common.two_factor_authentication.required`
 - `Two-Factor authentication required to process request`
@@ -270,8 +278,8 @@ All week-free games are already in the library
 
 1. 在你自己的正常浏览器里登录 Epic 账号
 2. 进入账号安全设置页面
-3. 把当前启用的验证方式全部点 `Remove`
-4. 确认邮箱验证、短信验证、验证器等二步验证都已关闭
+3. 如使用验证器 App 2FA，把二维码对应的 Base32 密钥填到 GitHub Secrets 的 `EPIC_TOTP_SECRET`
+4. 不使用验证器自动填码时，把当前启用的验证方式点 `Remove`
 5. 重新运行 Actions
 
 参考界面如下：

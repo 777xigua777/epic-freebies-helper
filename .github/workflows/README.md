@@ -42,6 +42,15 @@
 | `EPIC_EMAIL` | Epic 邮箱，需关闭 2FA |
 | `EPIC_PASSWORD` | Epic 密码，需关闭 2FA |
 
+如需接收 Telegram 领取结果通知，可额外配置：
+
+| Secret | 说明 |
+| --- | --- |
+| `TELEGRAM_BOT_TOKEN` | Telegram Bot Token |
+| `TELEGRAM_CHAT_ID` | Telegram 聊天 ID |
+
+两个 Secret 需要同时存在才会发送通知。发送失败不会影响领取任务；未配置时保持现有行为。
+
 如果你使用 Gemini 官方接口：
 
 `LLM_PROVIDER=gemini` 时，必须填写 `GEMINI_API_KEY`，无需新建并填写 `GLM_API_KEY`。

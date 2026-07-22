@@ -39,6 +39,7 @@ If you run into an error, please feel free to open an [Issue](https://github.com
 | Auto login | Signs in to your Epic account automatically |
 | Weekly free games discovery | Fetches and identifies currently claimable free titles |
 | Auto claim | Opens product pages and completes the checkout flow |
+| Claim result notifications | Optionally sends a Telegram run summary |
 | Captcha handling | Supports login captcha and checkout security checks |
 | Scheduled execution | Runs once every Thursday by default on GitHub Actions and can be adjusted |
 
@@ -90,6 +91,15 @@ Required in all cases:
 | --- | --- |
 | `EPIC_EMAIL` | your_epic_email@example.com |
 | `EPIC_PASSWORD` | your_epic_password |
+
+To receive Telegram claim summaries, optionally configure these Secrets:
+
+| Setting | Example value |
+| --- | --- |
+| `TELEGRAM_BOT_TOKEN` | Telegram Bot Token |
+| `TELEGRAM_CHAT_ID` | Telegram chat ID |
+
+Both settings must be present before a notification is sent. The message includes run status, current weekly games, newly claimed games, previously owned games, unconfirmed items, and failure reasons. Telegram delivery failures do not affect the claim task; when these settings are absent, the existing behavior is preserved.
 
 If you use `GLM`, start with this set:
 

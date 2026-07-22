@@ -937,3 +937,30 @@
   - Fork 运行 `29563199230` 使用相同编号模板和中点规则完成登录及两款游戏领取，运行 `29563952219` 再次完成登录并从订单历史确认两款均已领取。
   - 基于最新上游的 Fork 运行 `29622500920` 完成登录、商店会话验证和订单历史核对；该轮没有下发编号线段题，因此只作为集成无回归证据，不替代上述题图回放。
   - 按仓库规则未执行测试；使用 Black、Ruff、`py_compile`、真实挑战图离线回放和 `git diff --check` 验证。
+
+### 2026-07-22 领取结果只能通过 Actions 日志查看
+
+- 现象：
+  - 定时任务结束后没有外部结果摘要，用户需要打开 GitHub Actions 日志才能确认本周游戏、领取状态及失败原因。
+- 根因判断：
+  - 领取入口没有保存执行前后的订单历史快照，也没有统一的结果分类模型和可选通知通道。
+- 改动文件：
+  - `.github/workflows/epic-gamer.yml`
+  - `.github/workflows/README.md`
+  - `.github/workflows/README.en.md`
+  - `README.md`
+  - `README.en.md`
+  - `app/deploy.py`
+  - `app/services/epic_collection_summary_service.py`
+  - `app/services/epic_games_service.py`
+  - `app/services/telegram_notification_service.py`
+  - `pyproject.toml`
+  - `uv.lock`
+  - `docs/maintenance-log.md`
+- 处理结果：
+  - 新增领取前后订单历史快照，根据命名空间区分本次新领取、此前已拥有、未确认成功及明确失败的游戏。
+  - 异常后仍尝试刷新订单历史，避免把已经入库的游戏误报为失败；订单历史不可用时降级为未确认。
+  - 新增可选的 `TELEGRAM_BOT_TOKEN` 与 `TELEGRAM_CHAT_ID`，发送运行状态、游戏分类和精简失败原因。
+  - Telegram 消息转义 HTML 并按完整行截断；格式化、配置或网络错误均按非致命失败处理，不改变领取结果。
+  - 未配置两个 Telegram Secret 时保持原有领取行为，不额外发送通知。
+  - 按仓库规则未执行测试；Ruff、`py_compile`、workflow YAML 解析、依赖锁核对和 `git diff --check` 通过，Black 对入口及两个新增服务检查通过；共享游戏服务保留上游既有换行格式，避免引入无关格式化差异。

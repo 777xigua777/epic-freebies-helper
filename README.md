@@ -47,6 +47,7 @@
 | 自动登录 | 自动完成 Epic 账号登录 |
 | 自动发现周免 | 拉取并识别当周可领取游戏 |
 | 自动领取 | 自动进入商品页并完成结账流程 |
+| 领取结果通知 | 可选发送 Telegram 运行摘要 |
 | 验证码处理 | 支持登录验证码和 checkout 二次安全校验 |
 | 定时执行 | 默认每周四晚通过 GitHub Actions 运行一次，可自行调整 |
 
@@ -98,6 +99,15 @@ Fork 之后先打开自己仓库的 `Actions` 页面，进入 `Epic Awesome Game
 | --- | --- |
 | `EPIC_EMAIL` | your_epic_email@example.com |
 | `EPIC_PASSWORD` | your_epic_password |
+
+如果需要接收 Telegram 领取结果通知，请额外配置以下 Secrets：
+
+| 配置名 | 示例值 |
+| --- | --- |
+| `TELEGRAM_BOT_TOKEN` | Telegram Bot Token |
+| `TELEGRAM_CHAT_ID` | Telegram 聊天 ID |
+
+两个配置需要同时存在才会发送通知。通知包含运行状态、本周游戏、新领取、此前已拥有、未确认成功项目及失败原因。Telegram 发送失败不会影响领取任务；未配置时保持现有行为。
 
 如果你使用 `GLM`，建议先按下面这组填写：
 

@@ -938,6 +938,33 @@
   - 基于最新上游的 Fork 运行 `29622500920` 完成登录、商店会话验证和订单历史核对；该轮没有下发编号线段题，因此只作为集成无回归证据，不替代上述题图回放。
   - 按仓库规则未执行测试；使用 Black、Ruff、`py_compile`、真实挑战图离线回放和 `git diff --check` 验证。
 
+### 2026-07-22 领取结果只能通过 Actions 日志查看
+
+- 现象：
+  - 定时任务结束后没有外部结果摘要，用户需要打开 GitHub Actions 日志才能确认本周游戏、领取状态及失败原因。
+- 根因判断：
+  - 领取入口没有保存执行前后的订单历史快照，也没有统一的结果分类模型和可选通知通道。
+- 改动文件：
+  - `.github/workflows/epic-gamer.yml`
+  - `.github/workflows/README.md`
+  - `.github/workflows/README.en.md`
+  - `README.md`
+  - `README.en.md`
+  - `app/deploy.py`
+  - `app/services/epic_collection_summary_service.py`
+  - `app/services/epic_games_service.py`
+  - `app/services/telegram_notification_service.py`
+  - `pyproject.toml`
+  - `uv.lock`
+  - `docs/maintenance-log.md`
+- 处理结果：
+  - 新增领取前后订单历史快照，根据命名空间区分本次新领取、此前已拥有、未确认成功及明确失败的游戏。
+  - 异常后仍尝试刷新订单历史，避免把已经入库的游戏误报为失败；订单历史不可用时降级为未确认。
+  - 新增可选的 `TELEGRAM_BOT_TOKEN` 与 `TELEGRAM_CHAT_ID`，发送运行状态、游戏分类和精简失败原因。
+  - Telegram 消息转义 HTML 并按完整行截断；格式化、配置或网络错误均按非致命失败处理，不改变领取结果。
+  - 未配置两个 Telegram Secret 时保持原有领取行为，不额外发送通知。
+  - 按仓库规则未执行测试；Ruff、`py_compile`、workflow YAML 解析、依赖锁核对和 `git diff --check` 通过，Black 对入口及两个新增服务检查通过；共享游戏服务保留上游既有换行格式，避免引入无关格式化差异。
+
 ### 2026-07-30 补充 GLM 资源包到期提示并忽略本地 Claude 配置
 
 - 现象：
@@ -986,3 +1013,18 @@
   - `RETRY_ON_FAILURE` 默认关闭，购物车购买最多尝试 3 次；`hcaptcha-challenger` 依赖限制为 `>=0.19,<0.20`。
   - Actions 增加 hCaptcha 协议契约检查；纯文本 `image_drag_multi` 增加回归用例代码，pytest 路径配置为 `app`。
   - 按仓库规则未执行测试；hCaptcha 契约脚本、Ruff、Black、`py_compile` 和 `git diff --check` 用于静态验证。
+
+### 2026-07-30 修正 Telegram 领取摘要的非致命降级
+
+- 现象：
+  - PR #25 在领取前直接读取促销和订单历史，任一摘要快照失败都会阻止核心领取流程。
+  - 领取过程抛错后，代码会把所有尚未出现在订单历史中的游戏标记为明确失败，即使它们可能尚未尝试或订单历史尚未同步。
+- 根因判断：
+  - 可选通知的观测步骤位于核心领取调用之前且没有降级边界；异常分类又把“没有成功证据”错误等同于“存在失败证据”。
+- 改动文件：
+  - `app/services/epic_collection_summary_service.py`
+  - `docs/maintenance-log.md`
+- 处理结果：
+  - 领取前促销或订单快照失败时继续执行核心领取，并在摘要中记录快照不可用。
+  - 领取后的订单快照失败时返回未确认摘要，不再把已经完成的领取改判为任务失败。
+  - 领取异常时只确认快照能够证明的新领取项目，其余项目归为未确认，不再无证据地标记为失败。

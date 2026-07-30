@@ -519,6 +519,7 @@ dependencies = [
     { name = "browserforge" },
     { name = "celery", extra = ["redis"] },
     { name = "hcaptcha-challenger", extra = ["camoufox"] },
+    { name = "httpx" },
     { name = "pydantic-settings" },
 ]
 
@@ -536,6 +537,7 @@ requires-dist = [
     { name = "browserforge", specifier = ">=1.2.4" },
     { name = "celery", extras = ["redis"], specifier = ">=5.4.0" },
     { name = "hcaptcha-challenger", extras = ["camoufox"], specifier = ">=0.19,<0.20" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "pydantic-settings", specifier = ">=2.8.1" },
 ]
 

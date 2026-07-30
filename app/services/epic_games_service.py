@@ -270,8 +270,18 @@ class EpicAgent:
                     completed_orders.append(item)
         except Exception as err:
             logger.warning(err)
+            self._orders = []
+            return False
         self._orders = completed_orders
         return True
+
+    async def refresh_order_namespaces(self) -> set[str]:
+        self._orders = []
+        self._namespaces = []
+        if not await self._sync_order_history():
+            raise RuntimeError("Failed to load Epic order history")
+        self._namespaces = [order.namespace for order in self._orders]
+        return set(self._namespaces)
 
     async def _check_orders(self):
         await self._sync_order_history()

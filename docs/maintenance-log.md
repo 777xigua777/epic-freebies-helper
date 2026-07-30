@@ -964,3 +964,67 @@
   - Telegram 消息转义 HTML 并按完整行截断；格式化、配置或网络错误均按非致命失败处理，不改变领取结果。
   - 未配置两个 Telegram Secret 时保持原有领取行为，不额外发送通知。
   - 按仓库规则未执行测试；Ruff、`py_compile`、workflow YAML 解析、依赖锁核对和 `git diff --check` 通过，Black 对入口及两个新增服务检查通过；共享游戏服务保留上游既有换行格式，避免引入无关格式化差异。
+
+### 2026-07-30 补充 GLM 资源包到期提示并忽略本地 Claude 配置
+
+- 现象：
+  - GLM 首次实名认证赠送的资源包存在有效期，资源包到期后运行日志会出现余额不足或无可用资源包的 `429` 错误。
+  - `.claude/settings.local.json` 属于开发者本机权限配置，不应继续由仓库跟踪。
+- 根因判断：
+  - README 尚未说明 GLM 免费资源包的有效期和对应错误含义。
+  - `.claude/` 目录此前未被 `.gitignore` 排除。
+- 改动文件：
+  - `.gitignore`
+  - `.claude/settings.local.json`
+  - `README.md`
+  - `docs/maintenance-log.md`
+- 处理结果：
+  - README 补充 GLM 资源包有效期及 `429` 余额不足错误的处理说明。
+  - Git 忽略整个 `.claude/` 目录，并停止跟踪现有的本地 Claude 配置文件。
+
+### 2026-07-30 修复登录挑战抢占与 hCaptcha 重试契约
+
+- 现象：
+  - Fork Actions 运行 `30520354795` 在 `westus` 连续 5 次登录失败，日志均显示等待 `#sign-in` 超时。
+  - 运行上传的失败截图显示 hCaptcha 拖拽题已经覆盖登录表单，说明挑战在代码点击登录按钮前或点击过程中就已出现，但 solver 尚未进入 `wait_for_challenge()`。
+  - 当前 `hcaptcha-challenger 0.19.0` 只接受 `image_drag_multi`，适配层却仍会在纯文本兜底路径中把它改写为无效的 `image_drag_multiple`。
+  - 上游 `RETRY_ON_FAILURE` 默认开启，业务层未读取 `ChallengeSignal`，购物车购买路径还会在失败后无界递归调用自身。
+- 根因判断：
+  - 登录流程把“点击 `#sign-in` 成功返回”作为启动 solver 的前置条件，没有处理 hCaptcha 抢先覆盖按钮的竞态。
+  - challenge type 使用了脱离上游枚举的手写别名，且依赖允许跨 minor 版本自由漂移。
+  - 上游和业务层同时拥有重试控制，但两层都缺少统一信号日志和明确上限。
+- 改动文件：
+  - `app/extensions/hcaptcha_runtime.py`
+  - `app/extensions/llm_adapter.py`
+  - `app/services/epic_authorization_service.py`
+  - `app/services/epic_games_service.py`
+  - `app/settings.py`
+  - `scripts/check_hcaptcha_contract.py`
+  - `tests/test_glm_adapter.py`
+  - `.github/workflows/epic-gamer.yml`
+  - `.env.example`
+  - `pyproject.toml`
+  - `uv.lock`
+  - `docs/maintenance-log.md`
+- 处理结果：
+  - 登录提交现在会识别“hCaptcha 已经出现”以及“挑战在点击过程中替换按钮”两种状态，直接进入 solver，不再把挑战页误报为 `#sign-in` 缺失。
+  - 登录、checkout、隐性挑战探测、延长探测和购物车购买统一读取并记录 `ChallengeSignal`，外层等待均有明确超时。
+  - challenge type 直接来自上游 `ChallengeTypeEnum` / `RequestType`；无效别名被删除，schema 不再接受枚举外的归一化结果。
+  - `RETRY_ON_FAILURE` 默认关闭，购物车购买最多尝试 3 次；`hcaptcha-challenger` 依赖限制为 `>=0.19,<0.20`。
+  - Actions 增加 hCaptcha 协议契约检查；纯文本 `image_drag_multi` 增加回归用例代码，pytest 路径配置为 `app`。
+  - 按仓库规则未执行测试；hCaptcha 契约脚本、Ruff、Black、`py_compile` 和 `git diff --check` 用于静态验证。
+
+### 2026-07-30 修正 Telegram 领取摘要的非致命降级
+
+- 现象：
+  - PR #25 在领取前直接读取促销和订单历史，任一摘要快照失败都会阻止核心领取流程。
+  - 领取过程抛错后，代码会把所有尚未出现在订单历史中的游戏标记为明确失败，即使它们可能尚未尝试或订单历史尚未同步。
+- 根因判断：
+  - 可选通知的观测步骤位于核心领取调用之前且没有降级边界；异常分类又把“没有成功证据”错误等同于“存在失败证据”。
+- 改动文件：
+  - `app/services/epic_collection_summary_service.py`
+  - `docs/maintenance-log.md`
+- 处理结果：
+  - 领取前促销或订单快照失败时继续执行核心领取，并在摘要中记录快照不可用。
+  - 领取后的订单快照失败时返回未确认摘要，不再把已经完成的领取改判为任务失败。
+  - 领取异常时只确认快照能够证明的新领取项目，其余项目归为未确认，不再无证据地标记为失败。

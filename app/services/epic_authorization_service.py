@@ -14,11 +14,13 @@ from contextlib import suppress
 os.environ.setdefault("MPLBACKEND", "Agg")
 
 from hcaptcha_challenger.agent import AgentV
+from hcaptcha_challenger.models import ChallengeSignal
 from loguru import logger
 from playwright.async_api import Error as PlaywrightError
 from playwright.async_api import expect, Page, Response
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
+from extensions.hcaptcha_runtime import wait_for_challenge_signal
 from settings import SCREENSHOTS_DIR, settings
 
 URL_CLAIM = "https://store.epicgames.com/en-US/free-games"
@@ -396,7 +398,7 @@ class EpicAuthorization:
             if not await password_input.input_value(timeout=1000):
                 await password_input.fill(settings.EPIC_PASSWORD.get_secret_value())
 
-            await sign_in_button.click(timeout=5000)
+            await sign_in_button.click(timeout=5000, no_wait_after=True)
             await self.page.wait_for_timeout(1000)
             return True
         except PlaywrightTimeoutError:
@@ -404,6 +406,24 @@ class EpicAuthorization:
         except Exception as err:
             logger.warning("Could not resubmit Epic password form after captcha reset: {!r}", err)
             return False
+
+    async def _submit_login_or_accept_challenge(self) -> None:
+        if await self._has_visible_hcaptcha():
+            logger.warning(
+                "Login hCaptcha appeared before the sign-in button click; entering solve loop"
+            )
+            return
+
+        try:
+            await self.page.locator("#sign-in").click(timeout=10000, no_wait_after=True)
+        except PlaywrightTimeoutError:
+            if await self._has_visible_hcaptcha():
+                logger.warning(
+                    "Login hCaptcha replaced the sign-in button during submission; "
+                    "entering solve loop"
+                )
+                return
+            raise
 
     async def _get_login_status(
         self, timeout_ms: int = 30000, *, warn_timeout: bool = True
@@ -521,13 +541,22 @@ class EpicAuthorization:
 
             # 4. 点击登录按钮，触发人机挑战值守监听器
             # Active hCaptcha checkbox
-            await self.page.click("#sign-in")
+            await self._submit_login_or_accept_challenge()
 
             login_confirmed = False
             for challenge_attempt in range(1, 4):
                 logger.debug("Solving login challenge attempt {}/3", challenge_attempt)
-                with suppress(Exception):
-                    await agent.wait_for_challenge()
+                challenge_signal = ChallengeSignal.FAILURE
+                try:
+                    challenge_signal = await wait_for_challenge_signal(
+                        agent,
+                        context=f"login:{challenge_attempt}",
+                        timeout_seconds=(
+                            settings.EXECUTION_TIMEOUT + settings.RESPONSE_TIMEOUT + 5
+                        ),
+                    )
+                except Exception:
+                    pass
 
                 try:
                     await self._await_login_outcome(point_url, timeout_seconds=25)
@@ -536,9 +565,10 @@ class EpicAuthorization:
                 except PlaywrightTimeoutError:
                     if await self._has_visible_hcaptcha():
                         logger.warning(
-                            "Login outcome timed out while captcha is still visible; retrying "
-                            "solve attempt {}/3",
+                            "Login outcome timed out while captcha is still visible; "
+                            "retrying solve attempt {}/3 | signal={}",
                             challenge_attempt,
+                            challenge_signal.value,
                         )
                         continue
 

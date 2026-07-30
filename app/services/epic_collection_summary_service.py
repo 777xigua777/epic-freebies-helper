@@ -60,12 +60,38 @@ def _promotions_missing_from_snapshot(
 
 
 async def collect_epic_games_with_summary(agent: EpicAgent) -> CollectionSummary:
-    all_promotions = get_promotions()
-    before_namespaces = await agent.refresh_order_namespaces()
-    previously_claimed = _promotions_in_namespaces(all_promotions, before_namespaces)
-    pending_promotions = _unique_promotions(
-        [promotion for promotion in all_promotions if promotion.namespace not in before_namespaces]
-    )
+    summary_errors: list[str] = []
+    try:
+        all_promotions = get_promotions()
+    except Exception as err:
+        logger.warning(
+            "Failed to load promotions for collection summary | error_type={}", type(err).__name__
+        )
+        all_promotions = []
+        summary_errors.append(f"promotion snapshot unavailable: {type(err).__name__}")
+
+    try:
+        before_namespaces: set[str] | None = await agent.refresh_order_namespaces()
+    except Exception as err:
+        logger.warning(
+            "Failed to load Epic order history before collection | error_type={}",
+            type(err).__name__,
+        )
+        before_namespaces = None
+        summary_errors.append(f"pre-collection order snapshot unavailable: {type(err).__name__}")
+
+    if before_namespaces is None:
+        previously_claimed: list[PromotionGame] = []
+        pending_promotions = all_promotions
+    else:
+        previously_claimed = _promotions_in_namespaces(all_promotions, before_namespaces)
+        pending_promotions = _unique_promotions(
+            [
+                promotion
+                for promotion in all_promotions
+                if promotion.namespace not in before_namespaces
+            ]
+        )
 
     try:
         await agent.collect_epic_games()
@@ -77,23 +103,32 @@ async def collect_epic_games_with_summary(agent: EpicAgent) -> CollectionSummary
                 "Failed to refresh Epic order history after collection error | error_type={}",
                 type(snapshot_err).__name__,
             )
+            snapshot_message = (
+                f"post-error order snapshot unavailable: {type(snapshot_err).__name__}"
+            )
             summary = CollectionSummary(
                 all_promotions=all_promotions,
                 previously_claimed_promotions=previously_claimed,
                 unconfirmed_promotions=pending_promotions,
-                error_message=str(err),
+                error_message="; ".join([str(err), *summary_errors, snapshot_message]),
             )
         else:
+            newly_claimed = (
+                _promotions_in_namespaces(all_promotions, after_namespaces - before_namespaces)
+                if before_namespaces is not None
+                else []
+            )
+            unconfirmed_promotions = (
+                _promotions_missing_from_snapshot(pending_promotions, after_namespaces)
+                if before_namespaces is not None
+                else all_promotions
+            )
             summary = CollectionSummary(
                 all_promotions=all_promotions,
-                newly_claimed_promotions=_promotions_in_namespaces(
-                    all_promotions, after_namespaces - before_namespaces
-                ),
+                newly_claimed_promotions=newly_claimed,
                 previously_claimed_promotions=previously_claimed,
-                failed_promotions=_promotions_missing_from_snapshot(
-                    pending_promotions, after_namespaces
-                ),
-                error_message=str(err),
+                unconfirmed_promotions=unconfirmed_promotions,
+                error_message="; ".join([str(err), *summary_errors]),
             )
         raise EpicCollectionSummaryError(str(err), summary) from err
 
@@ -109,9 +144,16 @@ async def collect_epic_games_with_summary(agent: EpicAgent) -> CollectionSummary
             all_promotions=all_promotions,
             previously_claimed_promotions=previously_claimed,
             unconfirmed_promotions=pending_promotions,
-            error_message=message,
+            error_message="; ".join([message, *summary_errors]),
         )
-        raise EpicCollectionSummaryError(message, summary) from err
+        return summary
+
+    if before_namespaces is None:
+        return CollectionSummary(
+            all_promotions=all_promotions,
+            unconfirmed_promotions=all_promotions,
+            error_message="; ".join(summary_errors),
+        )
 
     newly_claimed = _promotions_in_namespaces(all_promotions, after_namespaces - before_namespaces)
     unconfirmed_promotions = _promotions_missing_from_snapshot(pending_promotions, after_namespaces)
@@ -121,4 +163,5 @@ async def collect_epic_games_with_summary(agent: EpicAgent) -> CollectionSummary
         newly_claimed_promotions=newly_claimed,
         previously_claimed_promotions=previously_claimed,
         unconfirmed_promotions=unconfirmed_promotions,
+        error_message="; ".join(summary_errors),
     )

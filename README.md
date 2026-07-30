@@ -21,6 +21,14 @@
 
 **如果你选择 `GLM` 路线，请先确认对应智谱账号已经完成实名认证，否则通常无法正常使用 API。**
 > 2026.4.28: 部分朋友反馈，不实名认证也能调用API，所以如出现无法使用的情况，请检查该项。
+> 2026.7.30: 首次实名认证赠送三个月的glm-v4.7的资源包，因此可以正常使用三个月。
+
+> [!WARNING]
+> 若执行日志出现以下错误：
+>
+> `GLM quota/rate limit issue | http_status=429 | code=1113 | message=余额不足或无可用资源包，请充值。`
+>
+> 则说明资源包可能已经过期。您可以前往智谱官网充值少量余额后继续使用。（支持国产，从我做起！）
 
 还没有智谱账号的话，可以通过这个邀请链接注册：[BigModel.cn 邀请注册链接](https://www.bigmodel.cn/invite?icode=A75tQCByIvrO4k6SLkU5BQZ3c5owLmCCcMQXWcJRS8E%3D)。
 
@@ -39,6 +47,7 @@
 | 自动登录 | 自动完成 Epic 账号登录 |
 | 自动发现周免 | 拉取并识别当周可领取游戏 |
 | 自动领取 | 自动进入商品页并完成结账流程 |
+| 领取结果通知 | 可选发送 Telegram 运行摘要 |
 | 验证码处理 | 支持登录验证码和 checkout 二次安全校验 |
 | 定时执行 | 默认每周四晚通过 GitHub Actions 运行一次，可自行调整 |
 
@@ -98,6 +107,15 @@ Fork 之后先打开自己仓库的 `Actions` 页面，进入 `Epic Awesome Game
 | `EPIC_TOTP_SECRET` | 验证器二维码对应的 Base32 密钥 |
 
 工作流会在 MFA 页面自动生成 6 位 TOTP。邮箱验证码、短信验证码和 Passkey 暂不支持；不要填写当前显示的 6 位动态验证码。
+
+如果需要接收 Telegram 领取结果通知，请额外配置以下 Secrets：
+
+| 配置名 | 示例值 |
+| --- | --- |
+| `TELEGRAM_BOT_TOKEN` | Telegram Bot Token |
+| `TELEGRAM_CHAT_ID` | Telegram 聊天 ID |
+
+两个配置需要同时存在才会发送通知。通知包含运行状态、本周游戏、新领取、此前已拥有、未确认成功项目及失败原因。Telegram 发送失败不会影响领取任务；未配置时保持现有行为。
 
 如果你使用 `GLM`，建议先按下面这组填写：
 

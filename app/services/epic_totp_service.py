@@ -148,16 +148,28 @@ async def _focus_totp_entry(page: Page) -> bool:
                   style.display !== 'none' &&
                   style.opacity !== '0';
               };
-              const candidates = Array.from(document.querySelectorAll(
-                "input, [contenteditable='true'], [role='textbox'], [tabindex]"
-              ))
-                .filter(isVisible)
-                .filter((element) => {
-                  const rect = element.getBoundingClientRect();
-                  return rect.width >= 24 && rect.width <= 90 &&
-                    rect.height >= 24 && rect.height <= 90;
-                });
-              const target = candidates[0];
+              const editables = Array.from(document.querySelectorAll(
+                "input, textarea, [contenteditable='true'], [role='textbox']"
+              )).filter(isVisible);
+              const narrowEditables = editables.filter((element) => {
+                const rect = element.getBoundingClientRect();
+                return rect.width >= 24 && rect.width <= 90 &&
+                  rect.height >= 24 && rect.height <= 90;
+              });
+              const target = editables.find((element) => {
+                const marker = [
+                  element.getAttribute('autocomplete'),
+                  element.getAttribute('name'),
+                  element.getAttribute('id'),
+                  element.getAttribute('inputmode'),
+                  element.getAttribute('aria-label'),
+                ].join(' ').toLowerCase();
+                const isCodeField = marker.includes('code') ||
+                  marker.includes('numeric') ||
+                  marker.includes('one-time');
+                return isCodeField ||
+                  (narrowEditables.length >= 6 && narrowEditables.includes(element));
+              });
               if (!target) {
                 return false;
               }
@@ -329,9 +341,11 @@ async def submit_totp_challenge(
             continue
 
     if not filled and await _page_has_mfa_signal(page):
-        await _focus_totp_entry(page)
-        await page.keyboard.type(code, delay=80)
-        filled = True
+        if await _focus_totp_entry(page):
+            await page.keyboard.type(code, delay=80)
+            filled = True
+        else:
+            logger.error("Could not focus a masked Epic authenticator 2FA code input")
 
     if not filled:
         logger.error("Could not find Epic authenticator 2FA code input")

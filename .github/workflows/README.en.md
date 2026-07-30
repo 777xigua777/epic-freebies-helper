@@ -50,6 +50,15 @@ If the account uses authenticator-app 2FA, optionally configure:
 
 When this Secret is absent, the existing login behavior remains unchanged. Email codes, SMS codes, and Passkeys are not supported.
 
+To receive Telegram claim summaries, optionally configure:
+
+| Secret | Description |
+| --- | --- |
+| `TELEGRAM_BOT_TOKEN` | Telegram Bot Token |
+| `TELEGRAM_CHAT_ID` | Telegram chat ID |
+
+Both Secrets must be present before a notification is sent. Delivery failures do not affect the claim task; when they are absent, the existing behavior remains unchanged.
+
 If you use the official Gemini API:
 
 When `LLM_PROVIDER=gemini`, you must fill `GEMINI_API_KEY`; there is no need to create or fill `GLM_API_KEY`.

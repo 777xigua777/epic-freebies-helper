@@ -38,6 +38,11 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
+      - name: Validate hCaptcha protocol contract
+        env:
+          PYTHONPATH: app
+        run: uv run python scripts/check_hcaptcha_contract.py
+
       # 增加 GITHUB_TOKEN 以降低 Camoufox 下载时的 403 频率限制。
       # 即使这里失败，运行时也可以回退到 Playwright Firefox。
       - name: Install Camoufox
@@ -54,6 +59,8 @@ jobs:
           EPIC_EMAIL: ${{ secrets.EPIC_EMAIL }}
           EPIC_PASSWORD: ${{ secrets.EPIC_PASSWORD }}
           EPIC_TOTP_SECRET: ${{ secrets.EPIC_TOTP_SECRET }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           LLM_PROVIDER: ${{ vars.LLM_PROVIDER || secrets.LLM_PROVIDER }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_BASE_URL: ${{ secrets.GEMINI_BASE_URL }}

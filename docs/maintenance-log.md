@@ -954,3 +954,35 @@
 - 处理结果：
   - README 补充 GLM 资源包有效期及 `429` 余额不足错误的处理说明。
   - Git 忽略整个 `.claude/` 目录，并停止跟踪现有的本地 Claude 配置文件。
+
+### 2026-07-30 修复登录挑战抢占与 hCaptcha 重试契约
+
+- 现象：
+  - Fork Actions 运行 `30520354795` 在 `westus` 连续 5 次登录失败，日志均显示等待 `#sign-in` 超时。
+  - 运行上传的失败截图显示 hCaptcha 拖拽题已经覆盖登录表单，说明挑战在代码点击登录按钮前或点击过程中就已出现，但 solver 尚未进入 `wait_for_challenge()`。
+  - 当前 `hcaptcha-challenger 0.19.0` 只接受 `image_drag_multi`，适配层却仍会在纯文本兜底路径中把它改写为无效的 `image_drag_multiple`。
+  - 上游 `RETRY_ON_FAILURE` 默认开启，业务层未读取 `ChallengeSignal`，购物车购买路径还会在失败后无界递归调用自身。
+- 根因判断：
+  - 登录流程把“点击 `#sign-in` 成功返回”作为启动 solver 的前置条件，没有处理 hCaptcha 抢先覆盖按钮的竞态。
+  - challenge type 使用了脱离上游枚举的手写别名，且依赖允许跨 minor 版本自由漂移。
+  - 上游和业务层同时拥有重试控制，但两层都缺少统一信号日志和明确上限。
+- 改动文件：
+  - `app/extensions/hcaptcha_runtime.py`
+  - `app/extensions/llm_adapter.py`
+  - `app/services/epic_authorization_service.py`
+  - `app/services/epic_games_service.py`
+  - `app/settings.py`
+  - `scripts/check_hcaptcha_contract.py`
+  - `tests/test_glm_adapter.py`
+  - `.github/workflows/epic-gamer.yml`
+  - `.env.example`
+  - `pyproject.toml`
+  - `uv.lock`
+  - `docs/maintenance-log.md`
+- 处理结果：
+  - 登录提交现在会识别“hCaptcha 已经出现”以及“挑战在点击过程中替换按钮”两种状态，直接进入 solver，不再把挑战页误报为 `#sign-in` 缺失。
+  - 登录、checkout、隐性挑战探测、延长探测和购物车购买统一读取并记录 `ChallengeSignal`，外层等待均有明确超时。
+  - challenge type 直接来自上游 `ChallengeTypeEnum` / `RequestType`；无效别名被删除，schema 不再接受枚举外的归一化结果。
+  - `RETRY_ON_FAILURE` 默认关闭，购物车购买最多尝试 3 次；`hcaptcha-challenger` 依赖限制为 `>=0.19,<0.20`。
+  - Actions 增加 hCaptcha 协议契约检查；纯文本 `image_drag_multi` 增加回归用例代码，pytest 路径配置为 `app`。
+  - 按仓库规则未执行测试；hCaptcha 契约脚本、Ruff、Black、`py_compile` 和 `git diff --check` 用于静态验证。

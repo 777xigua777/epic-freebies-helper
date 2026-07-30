@@ -69,6 +69,10 @@ class EpicSettings(AgentConfig):
     EPIC_EMAIL: str = Field(default_factory=lambda: _env("EPIC_EMAIL"))
     EPIC_PASSWORD: SecretStr = Field(default_factory=lambda: _env("EPIC_PASSWORD"))
     DISABLE_BEZIER_TRAJECTORY: bool = Field(default=False)
+    RETRY_ON_FAILURE: bool = Field(
+        default=False,
+        description="Disable hcaptcha-challenger recursive retries; callers own retry limits.",
+    )
     WAIT_FOR_CHALLENGE_VIEW_TO_RENDER_MS: int = Field(default=3000)
 
     CHALLENGE_CLASSIFIER_MODEL: str = Field(default="")

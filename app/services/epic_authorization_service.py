@@ -21,7 +21,7 @@ from playwright.async_api import expect, Page, Response
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from extensions.hcaptcha_runtime import wait_for_challenge_signal
-from services.epic_totp_service import redact_totp_inputs, submit_totp_challenge
+from services.epic_totp_service import redact_totp_inputs, submit_totp_challenge, totp_login_enabled
 from settings import SCREENSHOTS_DIR, settings
 
 URL_CLAIM = "https://store.epicgames.com/en-US/free-games"
@@ -385,6 +385,9 @@ class EpicAuthorization:
                 )
 
         async def submit_fresh_totp(reason: str) -> None:
+            if not totp_login_enabled():
+                raise EpicAuthenticationFatalError(reason)
+
             if self._is_mfa_code_invalid_error(reason):
                 self._invalid_totp_rejections += 1
                 if self._invalid_totp_rejections >= max_invalid_totp_rejections:

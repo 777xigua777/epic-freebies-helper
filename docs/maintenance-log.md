@@ -1068,3 +1068,21 @@
   - 只有成功聚焦并遮罩候选验证码控件后才允许键盘输入 TOTP。
   - MFA hCaptcha 统一使用有外层超时的挑战 helper，并且只接受 `ChallengeSignal.SUCCESS`。
   - TOTP 提交、无效拒绝和验证码后刷新状态在整个认证运行中累计，无法通过重复进入等待函数绕过上限。
+
+### 2026-07-30 保证 Telegram 与 TOTP 未配置时不改变旧流程
+
+- 现象：
+  - Telegram 未配置时虽然发送函数会跳过，但领取入口仍无条件建立摘要，并额外读取促销与领取前后的订单历史。
+  - TOTP 未配置时，认证异常清理仍会检查并尝试清空 MFA 输入框；进入 MFA 分支后才会发现缺少 Secret。
+- 根因判断：
+  - 两个可选功能只在各自执行末端判断配置，门控位置晚于它们新增的页面和网络操作。
+- 改动文件：
+  - `app/deploy.py`
+  - `app/services/telegram_notification_service.py`
+  - `app/services/epic_authorization_service.py`
+  - `app/services/epic_totp_service.py`
+  - `docs/maintenance-log.md`
+- 处理结果：
+  - 只有 `TELEGRAM_BOT_TOKEN` 与 `TELEGRAM_CHAT_ID` 同时存在时才启用摘要快照和通知；缺少任一配置时直接执行原始领取路径。
+  - 只有 `EPIC_TOTP_SECRET` 存在时才选择验证器方式、读取或清理 MFA 输入框以及生成和提交 TOTP。
+  - 两项功能完整配置后保持现有功能；未配置或配置不完整时不报错，也不增加对应的页面、订单历史或通知请求。

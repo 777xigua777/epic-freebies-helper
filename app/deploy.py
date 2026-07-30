@@ -29,6 +29,7 @@ from services.epic_games_service import EpicAgent
 from services.telegram_notification_service import (
     failure_summary_from_exception,
     send_collection_summary_to_telegram,
+    telegram_notifications_enabled,
 )
 from settings import LOG_DIR
 from settings import settings
@@ -53,7 +54,7 @@ def _env_bool(name: str, default: bool) -> bool:
 
 
 @logger.catch(reraise=True)
-async def execute_browser_tasks(headless: bool = True):
+async def execute_browser_tasks(headless: bool = True, *, collect_summary: bool = False):
     """
     Execute Epic Games free game collection tasks using browser automation.
 
@@ -83,7 +84,11 @@ async def execute_browser_tasks(headless: bool = True):
         logger.debug("Starting free games collection process")
         game_page = await browser.new_page()
         agent = EpicAgent(game_page)
-        summary = await collect_epic_games_with_summary(agent)
+        if collect_summary:
+            summary = await collect_epic_games_with_summary(agent)
+        else:
+            await agent.collect_epic_games()
+            summary = None
         logger.debug("Free games collection completed")
 
         # Cleanup browser resources
@@ -97,11 +102,17 @@ async def execute_browser_tasks(headless: bool = True):
 
 
 async def execute_browser_tasks_with_notification(headless: bool = True):
+    if configuration_error := settings.llm_configuration_error:
+        logger.error(configuration_error)
+        raise RuntimeError(configuration_error)
+
+    if not telegram_notifications_enabled():
+        logger.debug("Telegram notification is not configured; using standard collection flow")
+        await execute_browser_tasks(headless=headless)
+        return
+
     try:
-        if configuration_error := settings.llm_configuration_error:
-            logger.error(configuration_error)
-            raise RuntimeError(configuration_error)
-        summary = await execute_browser_tasks(headless=headless)
+        summary = await execute_browser_tasks(headless=headless, collect_summary=True)
     except Exception as err:
         await send_collection_summary_to_telegram(failure_summary_from_exception(err))
         raise

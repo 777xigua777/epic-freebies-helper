@@ -26,6 +26,10 @@ def _totp_secret_value() -> str | None:
     return secret or None
 
 
+def totp_login_enabled() -> bool:
+    return _totp_secret_value() is not None
+
+
 async def _current_totp_code(page: Page, *, force_next_window: bool = False) -> str | None:
     secret = _totp_secret_value()
     if not secret:
@@ -268,6 +272,8 @@ async def _clear_totp_entry(page: Page) -> None:
 
 
 async def redact_totp_inputs(page: Page) -> None:
+    if not totp_login_enabled():
+        return
     if await _page_has_mfa_signal(page):
         await _clear_totp_entry(page)
 
@@ -297,6 +303,9 @@ async def _wait_for_totp_input(page: Page, timeout_ms: int = 20000) -> bool:
 async def submit_totp_challenge(
     page: Page, *, force_next_code: bool = False, before_submit: Callable[[], None] | None = None
 ) -> bool:
+    if not totp_login_enabled():
+        return False
+
     if not await _wait_for_totp_input(page):
         logger.error("Could not find Epic authenticator 2FA code input after waiting")
         return False

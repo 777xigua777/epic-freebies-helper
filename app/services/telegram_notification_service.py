@@ -17,6 +17,10 @@ def _env(name: str) -> str:
     return os.getenv(name, "").strip()
 
 
+def telegram_notifications_enabled() -> bool:
+    return bool(_env("TELEGRAM_BOT_TOKEN") and _env("TELEGRAM_CHAT_ID"))
+
+
 def _format_error(error: Exception | str | None) -> str:
     if error is None:
         return "未知错误"

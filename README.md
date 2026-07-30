@@ -21,6 +21,14 @@
 
 **如果你选择 `GLM` 路线，请先确认对应智谱账号已经完成实名认证，否则通常无法正常使用 API。**
 > 2026.4.28: 部分朋友反馈，不实名认证也能调用API，所以如出现无法使用的情况，请检查该项。
+> 2026.7.30: 首次实名认证赠送三个月的glm-v4.7的资源包，因此可以正常使用三个月。
+
+> [!WARNING]
+> 若执行日志出现以下错误：
+>
+> `GLM quota/rate limit issue | http_status=429 | code=1113 | message=余额不足或无可用资源包，请充值。`
+>
+> 则说明资源包可能已经过期。您可以前往智谱官网充值少量余额后继续使用。（支持国产，从我做起！）
 
 还没有智谱账号的话，可以通过这个邀请链接注册：[BigModel.cn 邀请注册链接](https://www.bigmodel.cn/invite?icode=A75tQCByIvrO4k6SLkU5BQZ3c5owLmCCcMQXWcJRS8E%3D)。
 

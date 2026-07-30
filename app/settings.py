@@ -65,6 +65,9 @@ class EpicSettings(AgentConfig):
     BROWSER_BACKEND: str = Field(
         default="auto", description="Supported values: auto, camoufox, playwright"
     )
+    BROWSER_PROXY: SecretStr | None = Field(
+        default=None, description="Optional HTTP(S) or SOCKS proxy URL shared by browser backends."
+    )
 
     EPIC_EMAIL: str = Field(default_factory=lambda: _env("EPIC_EMAIL"))
     EPIC_PASSWORD: SecretStr = Field(default_factory=lambda: _env("EPIC_PASSWORD"))

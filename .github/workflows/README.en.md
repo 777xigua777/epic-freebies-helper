@@ -59,6 +59,8 @@ To receive Telegram claim summaries, optionally configure:
 
 Both Secrets must be present before a notification is sent. Delivery failures do not affect the claim task; when they are absent, the existing behavior remains unchanged.
 
+If shared cloud IP reputation causes harder hCaptcha challenges, you may optionally add a `BROWSER_PROXY` Secret in the form `http://username:password@host:port`, `https://...`, `socks4://...`, or `socks5://...`. Browser networking is unchanged when it is absent.
+
 If you use the official Gemini API:
 
 When `LLM_PROVIDER=gemini`, you must fill `GEMINI_API_KEY`; there is no need to create or fill `GLM_API_KEY`.

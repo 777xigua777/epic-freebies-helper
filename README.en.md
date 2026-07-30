@@ -109,6 +109,8 @@ To receive Telegram claim summaries, optionally configure these Secrets:
 
 Both settings must be present before a notification is sent. The message includes run status, current weekly games, newly claimed games, previously owned games, unconfirmed items, and failure reasons. Telegram delivery failures do not affect the claim task; when these settings are absent, the existing behavior is preserved.
 
+If shared cloud IP reputation causes unusually difficult hCaptcha challenges, you may optionally add a `BROWSER_PROXY` Secret. Supported forms are `http://username:password@host:port`, `https://...`, `socks4://...`, and `socks5://...`. Without it, browser networking is unchanged. Proxy quality, trust, and cost remain the user's responsibility.
+
 If you use `GLM`, start with this set:
 
 **If you plan to use `GLM_API_KEY`, make sure the related Zhipu account has already passed real-name verification, or the API may remain unavailable.**

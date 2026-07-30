@@ -59,6 +59,8 @@
 
 两个 Secret 需要同时存在才会发送通知。发送失败不会影响领取任务；未配置时保持现有行为。
 
+如果共享云 IP 导致 hCaptcha 风控加重，可选添加 `BROWSER_PROXY` Secret，格式为 `http://用户名:密码@主机:端口`、`https://...`、`socks4://...` 或 `socks5://...`。未配置时网络路径保持不变。
+
 如果你使用 Gemini 官方接口：
 
 `LLM_PROVIDER=gemini` 时，必须填写 `GEMINI_API_KEY`，无需新建并填写 `GLM_API_KEY`。

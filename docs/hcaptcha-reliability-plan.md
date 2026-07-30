@@ -1,6 +1,6 @@
 # hCaptcha 通过率改进方案
 
-> 状态：方案（未改代码）
+> 状态：已复核并实施 P0-P2；P3 待分题型数据
 > 日期：2026-07-26
 > 基线分支：`protocol-provider-architecture` @ `2fd6326`
 > 上游：`hcaptcha-challenger 0.19.0`（`pyproject.toml` 约束为 `>=0.18.13`）
@@ -8,6 +8,8 @@
 本文回答一个问题：**为什么用户有时候仍然过不了 Epic 的 hCaptcha，以及按什么顺序修。**
 
 结论先行：当前失败**主要不是"模型不够聪明"**。排查中发现了一个确定性的代码缺陷（P0），它会让整类拖拽题在兜底路径上 100% 失败；此外还有三个结构性问题（重试信号丢失、无界递归、零测试覆盖）放大了故障。这些修完之前，换更强的模型收益有限。
+
+> 实施复核（2026-07-30）：P0 与 P1-A/B/C/D 已在当前 `master` 落地；P2-A/B 的代理透传、Playwright 降级告警和 virtual 模式统一随后补齐。当前项目没有独立的通用 runtime summary，降级状态改为写入 error 日志并随 Actions 日志 artifact 留存，不让可选 Telegram 功能介入原领取路径。P3 仍需分题型成功率数据，不在缺少证据时修改默认模型。文末提到的 provider architecture 文档属于 `protocol-provider-architecture` 分支，不是当前 `master` 中可直接更新的文件。
 
 ---
 

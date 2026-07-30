@@ -12,7 +12,6 @@ using browser automation and scheduling capabilities.
 
 import asyncio
 import json
-import os
 import signal
 from contextlib import suppress
 from datetime import datetime
@@ -23,7 +22,7 @@ from loguru import logger
 from pytz import timezone
 
 from services.epic_authorization_service import EpicAuthorization
-from services.browser_context import open_browser_context
+from services.browser_context import open_browser_context, resolve_headless_mode
 from services.epic_collection_summary_service import collect_epic_games_with_summary
 from services.epic_games_service import EpicAgent
 from services.telegram_notification_service import (
@@ -46,15 +45,8 @@ init_log(
 TIMEZONE = timezone("Asia/Shanghai")
 
 
-def _env_bool(name: str, default: bool) -> bool:
-    value = os.getenv(name)
-    if value is None:
-        return default
-    return value.strip().lower() not in {"0", "false", "no", "off"}
-
-
 @logger.catch(reraise=True)
-async def execute_browser_tasks(headless: bool = True, *, collect_summary: bool = False):
+async def execute_browser_tasks(headless: bool | str = True, *, collect_summary: bool = False):
     """
     Execute Epic Games free game collection tasks using browser automation.
 
@@ -127,7 +119,7 @@ async def deploy():
     This function runs the collection process immediately and optionally
     sets up a scheduled task for automatic recurring execution.
     """
-    headless = _env_bool("HEADLESS", True)
+    headless = resolve_headless_mode()
 
     # Log current configuration for debugging
     sj = settings.model_dump(mode="json")

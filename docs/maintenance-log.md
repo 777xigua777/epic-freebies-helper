@@ -1086,3 +1086,35 @@
   - 只有 `TELEGRAM_BOT_TOKEN` 与 `TELEGRAM_CHAT_ID` 同时存在时才启用摘要快照和通知；缺少任一配置时直接执行原始领取路径。
   - 只有 `EPIC_TOTP_SECRET` 存在时才选择验证器方式、读取或清理 MFA 输入框以及生成和提交 TOTP。
   - 两项功能完整配置后保持现有功能；未配置或配置不完整时不报错，也不增加对应的页面、订单历史或通知请求。
+
+### 2026-07-30 补齐浏览器代理与 virtual 降级语义
+
+- 现象：
+  - GitHub Actions 使用共享云 IP，但浏览器没有可选代理入口，用户无法自行降低数据中心 IP 带来的 hCaptcha 风控。
+  - workflow 已运行在 Xvfb 中，主入口却把浏览器固定为真 headless；Playwright fallback 又把 `virtual` 转成 headless，浪费虚拟显示环境。
+  - Camoufox 自动降级到普通 Playwright Firefox 时只有普通 warning，且 Docker 示例仍开启上游无界 `RETRY_ON_FAILURE`。
+- 根因判断：
+  - 浏览器配置只覆盖后端选择，没有统一网络出口、显示模式和降级可观测性；Docker 示例也未同步业务层已接管重试上限的新策略。
+- 改动文件：
+  - `app/settings.py`
+  - `app/services/browser_context.py`
+  - `app/deploy.py`
+  - `app/schedule/collect_epic_games_task.py`
+  - `.env.example`
+  - `.github/workflows/epic-gamer.yml`
+  - `.github/workflows/README.md`
+  - `.github/workflows/README.en.md`
+  - `README.md`
+  - `README.en.md`
+  - `docker/docker-compose.yaml`
+  - `docker/.env`
+  - `docs/advanced.md`
+  - `docs/advanced.en.md`
+  - `docs/hcaptcha-reliability-plan.md`
+  - `docs/maintenance-log.md`
+- 处理结果：
+  - 新增可选且日志遮罩的 `BROWSER_PROXY`，严格解析 HTTP(S)/SOCKS URL，并同时透传 Camoufox 与 Playwright；未配置时保留原网络路径。
+  - Linux、Actions 与 Celery 统一使用 `virtual`；Playwright fallback 优先复用外部 `DISPLAY`，没有时自行创建并清理 Xvfb，不再退化成真 headless。
+  - 自动从 Camoufox 降级时记录 error 级后端状态，运行日志只显示是否启用代理，不输出代理地址或凭据。
+  - Camoufox fallback 只捕获浏览器启动异常；领取过程中的业务异常会原样上抛，不会被误判为启动失败并重复执行。
+  - Docker 示例关闭上游递归重试，与应用层有界重试保持一致；模型分工建议因缺少分题型数据暂不调整。

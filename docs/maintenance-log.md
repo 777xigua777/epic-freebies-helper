@@ -938,6 +938,30 @@
   - 基于最新上游的 Fork 运行 `29622500920` 完成登录、商店会话验证和订单历史核对；该轮没有下发编号线段题，因此只作为集成无回归证据，不替代上述题图回放。
   - 按仓库规则未执行测试；使用 Black、Ruff、`py_compile`、真实挑战图离线回放和 `git diff --check` 验证。
 
+### 2026-07-22 验证器 2FA 账号无法自动完成登录
+
+- 现象：
+  - 当前登录流程遇到 Epic 验证器 MFA 页面时直接终止，使用验证器 App 2FA 的账号必须先关闭该安全设置才能运行。
+- 根因判断：
+  - 登录状态机只识别二步验证错误，没有生成、填写和重新提交 TOTP 的处理路径，也没有对应的 Secret 注入配置。
+- 改动文件：
+  - `.github/workflows/epic-gamer.yml`
+  - `.github/workflows/README.md`
+  - `.github/workflows/README.en.md`
+  - `README.md`
+  - `README.en.md`
+  - `app/services/epic_authorization_service.py`
+  - `app/services/epic_totp_service.py`
+  - `pyproject.toml`
+  - `uv.lock`
+  - `docs/maintenance-log.md`
+- 处理结果：
+  - 新增可选的 `EPIC_TOTP_SECRET`，使用 Base32 密钥生成 6 位 TOTP，并支持单输入框和分离式输入框。
+  - 验证码临近过期时等待新时间窗口；Epic 返回无效或过期时重新生成，hCaptcha 打断后如仍需 MFA 则重新提交。
+  - TOTP 总提交次数限制为 6 次，无效或过期拒绝次数限制为 3 次；未配置密钥时保持原有行为。
+  - 密钥不写入日志，验证码输入框在填写前进行视觉遮罩，并在失败截图前清空，避免完整验证码进入日志、截图或录屏；邮箱验证码、短信验证码和 Passkey 不在本次范围。
+  - 按仓库规则未执行测试；使用 Black、Ruff、`py_compile`、workflow YAML 解析、依赖锁核对和 `git diff --check` 进行静态验证。
+
 ### 2026-07-22 领取结果只能通过 Actions 日志查看
 
 - 现象：
@@ -1028,3 +1052,19 @@
   - 领取前促销或订单快照失败时继续执行核心领取，并在摘要中记录快照不可用。
   - 领取后的订单快照失败时返回未确认摘要，不再把已经完成的领取改判为任务失败。
   - 领取异常时只确认快照能够证明的新领取项目，其余项目归为未确认，不再无证据地标记为失败。
+
+### 2026-07-30 收紧 TOTP 输入与 hCaptcha 恢复边界
+
+- 现象：
+  - PR #24 的兜底输入路径即使没有成功聚焦验证码控件，也会向当前页面焦点键入完整 TOTP。
+  - MFA 阶段调用 hCaptcha solver 后没有检查 `ChallengeSignal`，失败信号也会被当成已解决；多次等待登录结果还会重置 TOTP 次数限制。
+- 根因判断：
+  - 兜底输入、挑战完成和重试上限分别依赖“已调用”而不是可验证的成功结果，状态又被限制在单次等待函数内部。
+- 改动文件：
+  - `app/services/epic_authorization_service.py`
+  - `app/services/epic_totp_service.py`
+  - `docs/maintenance-log.md`
+- 处理结果：
+  - 只有成功聚焦并遮罩候选验证码控件后才允许键盘输入 TOTP。
+  - MFA hCaptcha 统一使用有外层超时的挑战 helper，并且只接受 `ChallengeSignal.SUCCESS`。
+  - TOTP 提交、无效拒绝和验证码后刷新状态在整个认证运行中累计，无法通过重复进入等待函数绕过上限。

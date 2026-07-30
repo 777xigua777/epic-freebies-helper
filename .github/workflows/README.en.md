@@ -39,8 +39,16 @@ Required in all cases:
 
 | Secret | Description |
 | --- | --- |
-| `EPIC_EMAIL` | Epic account email, with 2FA disabled |
-| `EPIC_PASSWORD` | Epic account password, with 2FA disabled |
+| `EPIC_EMAIL` | Epic account email; email/SMS 2FA must be disabled |
+| `EPIC_PASSWORD` | Epic account password; email/SMS 2FA must be disabled |
+
+If the account uses authenticator-app 2FA, optionally configure:
+
+| Secret | Description |
+| --- | --- |
+| `EPIC_TOTP_SECRET` | The Base32 secret encoded in the authenticator QR code; do not enter the current six-digit code |
+
+When this Secret is absent, the existing login behavior remains unchanged. Email codes, SMS codes, and Passkeys are not supported.
 
 To receive Telegram claim summaries, optionally configure:
 

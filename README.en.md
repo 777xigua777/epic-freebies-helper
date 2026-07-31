@@ -441,6 +441,7 @@ We extend our most genuine gratitude to everyone who has submitted feedback. The
   <a href="https://github.com/Leafrostar"><img src="https://github.com/Leafrostar.png?size=96" width="64" height="64" alt="@Leafrostar" /></a>
   <a href="https://github.com/AcosX"><img src="https://github.com/AcosX.png?size=96" width="64" height="64" alt="@AcosX" /></a>
   <a href="https://github.com/Elykia093"><img src="https://github.com/Elykia093.png?size=96" width="64" height="64" alt="@Elykia093" /></a>
+  <a href="https://github.com/ZoveyOhhh"><img src="https://github.com/ZoveyOhhh.png?size=96" width="64" height="64" alt="@ZoveyOhhh" /></a>
 </p>
 
 <!-- <p align="center">
@@ -452,7 +453,8 @@ We extend our most genuine gratitude to everyone who has submitted feedback. The
     <a href="https://github.com/AdjieC"><b>AdjieC</b></a> ·
     <a href="https://github.com/Leafrostar"><b>Leafrostar</b></a> ·
     <a href="https://github.com/AcosX"><b>AcosX</b></a> ·
-    <a href="https://github.com/Elykia093"><b>Elykia093</b></a>
+    <a href="https://github.com/Elykia093"><b>Elykia093</b></a> ·
+    <a href="https://github.com/ZoveyOhhh"><b>ZoveyOhhh</b></a>
   </sub>
 </p> -->
 

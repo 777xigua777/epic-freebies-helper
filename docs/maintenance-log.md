@@ -1118,3 +1118,22 @@
   - 自动从 Camoufox 降级时记录 error 级后端状态，运行日志只显示是否启用代理，不输出代理地址或凭据。
   - Camoufox fallback 只捕获浏览器启动异常；领取过程中的业务异常会原样上抛，不会被误判为启动失败并重复执行。
   - Docker 示例关闭上游递归重试，与应用层有界重试保持一致；模型分工建议因缺少分题型数据暂不调整。
+
+### 2026-07-31 修复 README Star 趋势图失效
+
+- 现象：
+  - 中英文 README 引用的 `api.star-history.com/chart` 明暗主题图片均返回 HTTP 503，仓库首页无法显示 Star 趋势。
+- 根因判断：
+  - GitHub 在 2026 年 7 月将 Stargazers 列表及时间戳限制为仓库管理员和协作者可读，Star History 公共服务不具备本仓库权限，旧的匿名实时图无法继续生成。
+- 改动文件：
+  - `scripts/generate_star_history.py`
+  - `.github/workflows/update-star-history.yml`
+  - `docs/images/star-history-light.svg`
+  - `docs/images/star-history-dark.svg`
+  - `README.md`
+  - `README.en.md`
+  - `docs/maintenance-log.md`
+- 处理结果：
+  - README 改用仓库内的明暗主题 SVG，不再依赖会返回 503 的第三方实时图片接口。
+  - 新增每日定时及手动触发的 Action，使用本仓库短期 `GITHUB_TOKEN` 从 GitHub API 获取 Stargazer 时间戳并更新图表，不需要公开个人 PAT。
+  - 更新任务只在上游仓库执行，Fork 与原有领取工作流不受影响；Star 数据没有变化时不会创建空提交。

@@ -457,6 +457,9 @@ docker compose up -d --build
   <a href="https://github.com/1208nn"><img src="https://github.com/1208nn.png?size=96" width="64" height="64" alt="@1208nn" /></a>
   <a href="https://github.com/LGDhuanghe"><img src="https://github.com/LGDhuanghe.png?size=96" width="64" height="64" alt="@LGDhuanghe" /></a>
   <a href="https://github.com/AdjieC"><img src="https://github.com/AdjieC.png?size=96" width="64" height="64" alt="@AdjieC" /></a>
+  <a href="https://github.com/Leafrostar"><img src="https://github.com/Leafrostar.png?size=96" width="64" height="64" alt="@Leafrostar" /></a>
+  <a href="https://github.com/AcosX"><img src="https://github.com/AcosX.png?size=96" width="64" height="64" alt="@AcosX" /></a>
+  <a href="https://github.com/Elykia093"><img src="https://github.com/Elykia093.png?size=96" width="64" height="64" alt="@Elykia093" /></a>
 </p>
 
 <!-- <p align="center">
@@ -465,7 +468,10 @@ docker compose up -d --build
     <a href="https://github.com/cita-777"><b>cita-777</b></a> ·
     <a href="https://github.com/1208nn"><b>1208nn</b></a> ·
     <a href="https://github.com/LGDhuanghe"><b>LGDhuanghe</b></a> ·
-    <a href="https://github.com/AdjieC"><b>AdjieC</b></a>
+    <a href="https://github.com/AdjieC"><b>AdjieC</b></a> ·
+    <a href="https://github.com/Leafrostar"><b>Leafrostar</b></a> ·
+    <a href="https://github.com/AcosX"><b>AcosX</b></a> ·
+    <a href="https://github.com/Elykia093"><b>Elykia093</b></a>
   </sub>
 </p> -->
 
